@@ -1,0 +1,55 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+*.egg
+dist/
+build/
+.eggs/
+*.so
+*.dylib
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# uv
+uv.lock
+
+# Environment / secrets — NEVER commit
+.env
+.env.*
+!.env.example
+
+# Pytest & coverage
+.pytest_cache/
+.coverage
+htmlcov/
+*.xml
+
+# Evaluation traces (auto-generated)
+tests/eval/traces/
+
+# Node / Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
+# OS artifacts
+.DS_Store
+Thumbs.db
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Antigravity / AI assistant internals
+.codex/
+scratch_test.py
