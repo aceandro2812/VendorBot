@@ -120,12 +120,23 @@ class TriggerPayload(BaseModel):
 def update_llm_models(model_name: str):
     from app.config import GEMINI_API_KEY
     from google.adk.models.google_llm import Gemini
-    from app.agent import legal_sla_agent, sourcing_agent, negotiation_agent
-    logger.info(f"[MODEL SWITCH] Switching all LLM agents to: {model_name}")
+    from google.adk.agents.llm_agent import LlmAgent
+    from app.agent import app as adk_app, legal_sla_agent, sourcing_agent, negotiation_agent
+    
+    logger.info(f"[MODEL SWITCH] Dynamically switching all workflow nodes to: {model_name}")
     new_model = Gemini(model=model_name, api_key=GEMINI_API_KEY)
+    
+    # 1. Update module-level singletons (in case of direct references)
     legal_sla_agent.model = new_model
     sourcing_agent.model = new_model
     negotiation_agent.model = new_model
+    
+    # 2. Update the actual instantiated/cloned nodes inside the workflow edges
+    for edge in adk_app.root_agent.edges:
+        if isinstance(edge.from_node, LlmAgent):
+            edge.from_node.model = new_model
+        if isinstance(edge.to_node, LlmAgent):
+            edge.to_node.model = new_model
 
 @app.post("/api/sessions/trigger")
 async def trigger_pipeline(payload: TriggerPayload):
