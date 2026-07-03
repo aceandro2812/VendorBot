@@ -441,8 +441,16 @@ Your job:
 4. Determine if Force Majeure exclusions apply (Acts of God, war, riot, government embargo).
 5. Write a brief legal reasoning string.
 
+MANDATORY STRUCTURAL RULE:
+Your response must be a raw JSON object containing exactly these fields:
+- "supplier_name": String (name of the supplier from context)
+- "liquidated_damages_per_day": Float (e.g. 5000.0)
+- "total_penalty": Float (liquidated_damages_per_day * delayed_days)
+- "force_majeure_applies": Boolean (true or false)
+- "reasoning": String (explanation)
+
 MANDATORY: You MUST call read_contract_pdf FIRST before outputting anything.
-OUTPUT RULE: Output ONLY a raw JSON object matching the LegalAnalysis schema. No prose, no questions.
+OUTPUT RULE: Output ONLY raw valid JSON conforming to the fields above. No conversational text.
     """,
     tools=[legal_mcp_toolset],
     output_key="legal_analysis",
@@ -468,8 +476,18 @@ Your job:
 4. Select the best_option as the vendor with the lowest price that still has stock.
 5. Set price_premium_percent on the best_option's price relative to {standard_unit_price}.
 
+MANDATORY STRUCTURAL RULE:
+Your response must be a raw JSON object containing exactly these fields:
+- "options": List of objects, each containing:
+    * "vendor": String
+    * "price": Float
+    * "avail": Integer
+    * "delivery_days": Integer
+- "best_option": Object (or null if no options found) matching the option schema above
+- "price_premium_percent": Float (premium relative to standard price)
+
 MANDATORY: You MUST call scrape_supplier_marketplace FIRST before outputting anything.
-OUTPUT RULE: Output ONLY a raw JSON object matching the SourcingAnalysis schema. No prose, no questions.
+OUTPUT RULE: Output ONLY raw valid JSON conforming to the fields above. No conversational text.
 If the marketplace returns no results, output options=[], best_option=null, price_premium_percent=0.0.
     """,
     tools=[sourcing_mcp_toolset],
@@ -496,8 +514,14 @@ Your job:
 3. If latest_vendor_reply exists in state, acknowledge and respond to it firmly but politely.
 4. Call send_vendor_negotiation_email to dispatch the email.
 
+MANDATORY STRUCTURAL RULE:
+Your response must be a raw JSON object containing exactly these fields:
+- "email_drafted": String (the email text)
+- "vendor_email": String (contact email from get_supplier_meta)
+- "status": String (must be "EMAIL_SENT")
+
 MANDATORY: You MUST call get_supplier_meta and send_vendor_negotiation_email FIRST before outputting anything.
-OUTPUT RULE: Output ONLY a raw JSON object matching the NegotiationState schema. No prose, no questions.
+OUTPUT RULE: Output ONLY raw valid JSON conforming to the fields above. No conversational text.
     """,
     tools=[get_supplier_meta, send_vendor_negotiation_email],
     output_key="negotiation_state",

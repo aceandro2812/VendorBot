@@ -131,12 +131,14 @@ def update_llm_models(model_name: str):
     sourcing_agent.model = new_model
     negotiation_agent.model = new_model
     
-    # 2. Update the actual instantiated/cloned nodes inside the workflow edges
-    for edge in adk_app.root_agent.edges:
-        if isinstance(edge.from_node, LlmAgent):
-            edge.from_node.model = new_model
-        if isinstance(edge.to_node, LlmAgent):
-            edge.to_node.model = new_model
+    # 2. Update the actual compiled nodes in the workflow execution graph!
+    # InMemoryRunner has runner.agent, which is the Workflow instance.
+    # Its compiled nodes live inside runner.agent.graph.nodes.
+    if runner.agent and runner.agent.graph:
+        for node in runner.agent.graph.nodes:
+            if isinstance(node, LlmAgent):
+                node.model = new_model
+                logger.info(f"Updated compiled workflow graph node: {node.name} -> {node.model.model}")
 
 @app.post("/api/sessions/trigger")
 async def trigger_pipeline(payload: TriggerPayload):
