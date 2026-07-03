@@ -417,6 +417,12 @@ sourcing_mcp_toolset = McpToolset(
     tool_filter=["scrape_supplier_marketplace"]
 )
 
+def log_active_model(callback_context, llm_request):
+    import logging
+    logger = logging.getLogger("fast_api_app")
+    logger.info(f"[LLM ACTIVE EXECUTION] Calling model ID: {llm_request.model}")
+    return None
+
 legal_sla_agent = LlmAgent(
     name="legal_sla_agent",
     model=llm_model,
@@ -442,6 +448,7 @@ OUTPUT RULE: Output ONLY a raw JSON object matching the LegalAnalysis schema. No
     output_key="legal_analysis",
     output_schema=LegalAnalysis,
     include_contents="none",
+    before_model_callback=log_active_model,
 )
 
 sourcing_agent = LlmAgent(
@@ -469,6 +476,7 @@ If the marketplace returns no results, output options=[], best_option=null, pric
     output_key="sourcing_analysis",
     output_schema=SourcingAnalysis,
     include_contents="none",
+    before_model_callback=log_active_model,
 )
 
 negotiation_agent = LlmAgent(
@@ -494,6 +502,8 @@ OUTPUT RULE: Output ONLY a raw JSON object matching the NegotiationState schema.
     tools=[get_supplier_meta, send_vendor_negotiation_email],
     output_key="negotiation_state",
     output_schema=NegotiationState,
+    include_contents="none",
+    before_model_callback=log_active_model,
 )
 
 
