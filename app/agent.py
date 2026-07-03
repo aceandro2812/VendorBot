@@ -441,6 +441,7 @@ OUTPUT RULE: Output ONLY a raw JSON object matching the LegalAnalysis schema. No
     tools=[legal_mcp_toolset],
     output_key="legal_analysis",
     output_schema=LegalAnalysis,
+    include_contents="none",
 )
 
 sourcing_agent = LlmAgent(
@@ -467,6 +468,7 @@ If the marketplace returns no results, output options=[], best_option=null, pric
     tools=[sourcing_mcp_toolset],
     output_key="sourcing_analysis",
     output_schema=SourcingAnalysis,
+    include_contents="none",
 )
 
 negotiation_agent = LlmAgent(
