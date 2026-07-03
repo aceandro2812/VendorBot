@@ -17,10 +17,12 @@ from app.tools import (
 # Mock LLM Responses generator
 # ==========================================
 async def mock_generate_content_async(self, llm_request, stream=False):
-    tools = llm_request.tools_dict or {}
+    instruction = getattr(llm_request.config, "system_instruction", "") or ""
+    if not isinstance(instruction, str):
+        instruction = " ".join(instruction)
 
-    # 1. Legal SLA Agent (uses read_contract_pdf)
-    if "read_contract_pdf" in tools:
+    # 1. Legal SLA Agent
+    if "corporate legal auditor" in instruction:
         mock_response_json = """
         {
           "supplier_name": "Pacific Semiconductors",
@@ -32,8 +34,8 @@ async def mock_generate_content_async(self, llm_request, stream=False):
         """
         yield LlmResponse(content=types.Content(parts=[types.Part(text=mock_response_json)], role="model"))
 
-    # 2. Sourcing Agent (uses scrape_supplier_marketplace)
-    elif "scrape_supplier_marketplace" in tools:
+    # 2. Sourcing Agent
+    elif "spot-sourcing agent" in instruction:
         mock_response_json = """
         {
           "options": [
@@ -46,13 +48,13 @@ async def mock_generate_content_async(self, llm_request, stream=False):
         """
         yield LlmResponse(content=types.Content(parts=[types.Part(text=mock_response_json)], role="model"))
 
-    # 3. Negotiation Agent (uses send_vendor_negotiation_email)
-    elif "send_vendor_negotiation_email" in tools:
+    # 3. Negotiation Agent
+    elif "Procurement Negotiator" in instruction:
         mock_response_json = """
         {
           "email_drafted": "Dear Alt Tech Supply, we would like to buy SKU-404X...",
           "vendor_email": "sales@alttech.com",
-          "status": "EMAIL_SENT"
+          "status": "DRAFTED"
         }
         """
         yield LlmResponse(content=types.Content(parts=[types.Part(text=mock_response_json)], role="model"))

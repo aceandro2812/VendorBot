@@ -8,8 +8,6 @@ from google.adk.events.event import Event
 from google.adk.workflow import Edge, Workflow, node, START
 from google.adk.agents.llm_agent import LlmAgent
 from google.adk.workflow._function_node import RequestInput
-from google.adk.tools.mcp_tool.mcp_toolset import McpToolset
-from mcp import StdioServerParameters
 
 # Import config and mock tools
 from app.config import llm_model, BUDGET_PREMIUM_THRESHOLD, MAX_NEGOTIATION_TURNS
@@ -49,7 +47,7 @@ class SourcingAnalysis(BaseModel):
 class NegotiationState(BaseModel):
     email_drafted: str = Field(..., description="The professional B2B email proposal drafted for the vendor.")
     vendor_email: str = Field(..., description="The vendor sales contact email.")
-    status: str = Field(..., description="Status (e.g. 'EMAIL_SENT', 'RESOLVED').")
+    status: str = Field(..., description="Status (e.g. 'DRAFTED', 'EMAIL_SENT', 'RESOLVED').")
 
 # ==========================================
 # Deterministic Python Nodes & Gates
@@ -106,6 +104,7 @@ def disruption_detector_node(ctx: Context, node_input: Any):
     ctx.state["factory_code"] = factory_code
     ctx.state["selected_model"] = model_name
     ctx.state["erp_health"] = erp_health_json
+    ctx.state["latest_vendor_reply"] = ""
     
     # Map SKU to original supplier name and standard unit price for SLA contract lookup
     sku_upper = sku.strip().upper() if isinstance(sku, str) else str(sku).strip().upper()
@@ -389,6 +388,59 @@ def contract_signing_node(ctx: Context, node_input: Any):
         yield Event(data=ctx.state)
 
 @node
+def fetch_contract_node(ctx: Context, node_input: Any):
+    """
+    Deterministic pre-LLM step: fetch and scrub SLA contract text before legal audit.
+    Avoids multi-turn tool calling in the LLM, which breaks Gemini history after HITL resume.
+    """
+    supplier_name = ctx.state.get("supplier_name", "Default Supplier")
+    ctx.state["contract_text"] = read_contract_pdf(supplier_name)
+    yield Event(data=ctx.state)
+
+@node
+def fetch_marketplace_node(ctx: Context, node_input: Any):
+    """
+    Deterministic pre-LLM step: scrape marketplace data before sourcing analysis.
+    """
+    sku = ctx.state.get("sku", "SKU-404X")
+    ctx.state["marketplace_data"] = scrape_supplier_marketplace(sku)
+    yield Event(data=ctx.state)
+
+@node
+def prepare_negotiation_context_node(ctx: Context, node_input: Any):
+    """
+    Deterministic pre-LLM step: resolve vendor contact metadata before drafting email.
+    """
+    import json
+
+    final_option = ctx.state.get("final_sourcing_option")
+    vendor_name = get_field(final_option, "vendor", "Unknown Vendor")
+    meta = json.loads(get_supplier_meta(vendor_name))
+    ctx.state["vendor_name"] = vendor_name
+    ctx.state["vendor_email"] = meta.get("contact_email", "")
+    yield Event(data=ctx.state)
+
+@node
+def dispatch_negotiation_email_node(ctx: Context, node_input: Any):
+    """
+    Deterministic post-LLM step: send the drafted negotiation email.
+    """
+    neg_state = ctx.state.get("negotiation_state", {})
+    email_body = get_field(neg_state, "email_drafted", "")
+    vendor_email = ctx.state.get("vendor_email", get_field(neg_state, "vendor_email", ""))
+    session_id = ctx.state.get("session_id", "default")
+
+    send_vendor_negotiation_email(session_id, vendor_email, email_body)
+
+    updated_state = {
+        "email_drafted": email_body,
+        "vendor_email": vendor_email,
+        "status": "EMAIL_SENT",
+    }
+    ctx.state["negotiation_state"] = updated_state
+    yield Event(data=ctx.state)
+
+@node
 def manual_ticket_queue(ctx: Context, node_input: Any):
     """
     Escalates the contract breach or spot sourcing dispute to a human buyer's manual ticket queue.
@@ -400,22 +452,6 @@ def manual_ticket_queue(ctx: Context, node_input: Any):
 # ==========================================
 # LLM Agents (Task Mode / Singleton Mode)
 # ==========================================
-
-legal_mcp_toolset = McpToolset(
-    connection_params=StdioServerParameters(
-        command="uv",
-        args=["run", "python", "app/mcp_server.py"]
-    ),
-    tool_filter=["read_contract_pdf"]
-)
-
-sourcing_mcp_toolset = McpToolset(
-    connection_params=StdioServerParameters(
-        command="uv",
-        args=["run", "python", "app/mcp_server.py"]
-    ),
-    tool_filter=["scrape_supplier_marketplace"]
-)
 
 def log_active_model(callback_context, llm_request):
     import logging
@@ -433,13 +469,13 @@ CONTEXT (injected from session state):
 - Supplier to audit: {supplier_name}
 - Delay duration: {delayed_days} days
 - SKU involved: {sku}
+- SLA contract text (pre-fetched): {contract_text}
 
 Your job:
-1. Call read_contract_pdf(supplier_name="{supplier_name}") to retrieve the SLA contract text.
-2. Read the contract text carefully and extract the liquidated damages penalty per day.
-3. Calculate total_penalty = liquidated_damages_per_day × {delayed_days}.
-4. Determine if Force Majeure exclusions apply (Acts of God, war, riot, government embargo).
-5. Write a brief legal reasoning string.
+1. Read the contract text carefully and extract the liquidated damages penalty per day.
+2. Calculate total_penalty = liquidated_damages_per_day × {delayed_days}.
+3. Determine if Force Majeure exclusions apply (Acts of God, war, riot, government embargo).
+4. Write a brief legal reasoning string.
 
 MANDATORY STRUCTURAL RULE:
 Your response must be a raw JSON object containing exactly these fields:
@@ -449,13 +485,10 @@ Your response must be a raw JSON object containing exactly these fields:
 - "force_majeure_applies": Boolean (true or false)
 - "reasoning": String (explanation)
 
-MANDATORY: You MUST call read_contract_pdf FIRST before outputting anything.
 OUTPUT RULE: Output ONLY raw valid JSON conforming to the fields above. No conversational text.
     """,
-    tools=[legal_mcp_toolset],
     output_key="legal_analysis",
     output_schema=LegalAnalysis,
-    include_contents="none",
     before_model_callback=log_active_model,
 )
 
@@ -468,13 +501,13 @@ You are an AI spot-sourcing agent.
 CONTEXT (injected from session state):
 - SKU to source: {sku}
 - Standard unit price on contract: ${standard_unit_price}
+- Marketplace data (pre-fetched): {marketplace_data}
 
 Your job:
-1. Call scrape_supplier_marketplace(sku="{sku}") to get alternative vendor options.
-2. Parse the returned table of vendors, prices, availability, and delivery lead times.
-3. For each vendor, compute price_premium_percent = ((vendor_price - {standard_unit_price}) / {standard_unit_price}) * 100.
-4. Select the best_option as the vendor with the lowest price that still has stock.
-5. Set price_premium_percent on the best_option's price relative to {standard_unit_price}.
+1. Parse the marketplace table of vendors, prices, availability, and delivery lead times.
+2. For each vendor, compute price_premium_percent = ((vendor_price - {standard_unit_price}) / {standard_unit_price}) * 100.
+3. Select the best_option as the vendor with the lowest price that still has stock.
+4. Set price_premium_percent on the best_option's price relative to {standard_unit_price}.
 
 MANDATORY STRUCTURAL RULE:
 Your response must be a raw JSON object containing exactly these fields:
@@ -486,14 +519,11 @@ Your response must be a raw JSON object containing exactly these fields:
 - "best_option": Object (or null if no options found) matching the option schema above
 - "price_premium_percent": Float (premium relative to standard price)
 
-MANDATORY: You MUST call scrape_supplier_marketplace FIRST before outputting anything.
 OUTPUT RULE: Output ONLY raw valid JSON conforming to the fields above. No conversational text.
 If the marketplace returns no results, output options=[], best_option=null, price_premium_percent=0.0.
     """,
-    tools=[sourcing_mcp_toolset],
     output_key="sourcing_analysis",
     output_schema=SourcingAnalysis,
-    include_contents="none",
     before_model_callback=log_active_model,
 )
 
@@ -505,28 +535,26 @@ You are a senior B2B Procurement Negotiator.
 
 CONTEXT (injected from session state):
 - SKU: {sku}
+- Vendor name: {vendor_name}
+- Vendor email: {vendor_email}
 - Approved SLA damages leverage: ${approved_damages}
 - Delay duration: {delayed_days} days
+- Latest vendor reply (if any): {latest_vendor_reply}
 
 Your job:
-1. Call get_supplier_meta on the recommended vendor (from final_sourcing_option in state) to get their contact email.
-2. Draft a professional procurement email requesting a discounted price or fast delivery, using the ${{approved_damages}} SLA damages as leverage.
-3. If latest_vendor_reply exists in state, acknowledge and respond to it firmly but politely.
-4. Call send_vendor_negotiation_email to dispatch the email.
+1. Draft a professional procurement email requesting a discounted price or fast delivery, using the ${{approved_damages}} SLA damages as leverage.
+2. If latest_vendor_reply exists in state, acknowledge and respond to it firmly but politely.
 
 MANDATORY STRUCTURAL RULE:
 Your response must be a raw JSON object containing exactly these fields:
 - "email_drafted": String (the email text)
-- "vendor_email": String (contact email from get_supplier_meta)
-- "status": String (must be "EMAIL_SENT")
+- "vendor_email": String (use {vendor_email} from context)
+- "status": String (must be "DRAFTED")
 
-MANDATORY: You MUST call get_supplier_meta and send_vendor_negotiation_email FIRST before outputting anything.
 OUTPUT RULE: Output ONLY raw valid JSON conforming to the fields above. No conversational text.
     """,
-    tools=[get_supplier_meta, send_vendor_negotiation_email],
     output_key="negotiation_state",
     output_schema=NegotiationState,
-    include_contents="none",
     before_model_callback=log_active_model,
 )
 
@@ -541,23 +569,27 @@ root_workflow = Workflow(
         # 1. Start -> Ingest -> Security Screen -> Legal Auditor (if clean) or Manual Queue (if escalated)
         Edge(from_node=START, to_node=disruption_detector_node),
         Edge(from_node=disruption_detector_node, to_node=security_screen_node),
-        Edge(from_node=security_screen_node, to_node=legal_sla_agent, route="clean"),
+        Edge(from_node=security_screen_node, to_node=fetch_contract_node, route="clean"),
         Edge(from_node=security_screen_node, to_node=manual_ticket_queue, route="escalated"),
+        Edge(from_node=fetch_contract_node, to_node=legal_sla_agent),
         Edge(from_node=legal_sla_agent, to_node=legal_approval_gate),
         
         # 2. Legal Approval Branching
-        Edge(from_node=legal_approval_gate, to_node=sourcing_agent, route="approved"),
+        Edge(from_node=legal_approval_gate, to_node=fetch_marketplace_node, route="approved"),
         Edge(from_node=legal_approval_gate, to_node=manual_ticket_queue, route="rejected"),
+        Edge(from_node=fetch_marketplace_node, to_node=sourcing_agent),
         
         # 3. Sourcing -> Procurement Constraints Check
         Edge(from_node=sourcing_agent, to_node=procurement_agent),
         
         # 4. Procurement Approval Branching
-        Edge(from_node=procurement_agent, to_node=negotiation_agent, route="approved"),
+        Edge(from_node=procurement_agent, to_node=prepare_negotiation_context_node, route="approved"),
         Edge(from_node=procurement_agent, to_node=manual_ticket_queue, route="rejected"),
+        Edge(from_node=prepare_negotiation_context_node, to_node=negotiation_agent),
         
         # 5. Negotiation Conversation Loop
-        Edge(from_node=negotiation_agent, to_node=negotiation_wait_gate),
+        Edge(from_node=negotiation_agent, to_node=dispatch_negotiation_email_node),
+        Edge(from_node=dispatch_negotiation_email_node, to_node=negotiation_wait_gate),
         Edge(from_node=negotiation_wait_gate, to_node=negotiation_agent, route="continue_negotiation"),
         
         # 6. Negotiation Resolution Branches

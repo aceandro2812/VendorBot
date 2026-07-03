@@ -43,10 +43,6 @@ export default function App() {
       if (res.ok) {
         const data = await res.json();
         setSessions(data);
-        // Default select first session if none selected
-        if (data.length > 0 && !selectedSessionId) {
-          setSelectedSessionId(data[0].session_id);
-        }
       }
     } catch (err) {
       console.error("Error fetching sessions:", err);
@@ -76,6 +72,10 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    if (!selectedSessionId) {
+      setCurrentSession(null);
+      return;
+    }
     fetchSessionDetails(selectedSessionId);
   }, [selectedSessionId]);
 
@@ -214,13 +214,32 @@ export default function App() {
   const premiumCost = state.final_sourcing_option ? ((state.final_sourcing_option.price - standardPrice) * 100) : 0.00;
   const netSaved = (savings - Math.max(0, premiumCost)).toFixed(2);
 
+  const PIPELINE_STEPS = [
+    { id: 'ingestion', label: 'Ingest', step: '01' },
+    { id: 'security_screen', label: 'Security', step: '02' },
+    { id: 'legal_sla', label: 'SLA audit', step: '03' },
+    { id: 'legal_approval', label: 'Legal review', step: '04' },
+    { id: 'sourcing', label: 'Sourcing', step: '05' },
+    { id: 'procurement', label: 'Budget check', step: '06' },
+    { id: 'negotiation', label: 'Negotiation', step: '07' },
+    { id: 'po_signing', label: 'PO sign-off', step: '08' },
+  ];
+
+  const formatSessionStatus = (session) => {
+    if (session.state?.security_alert) return 'Quarantined';
+    if (session.is_suspended) return 'Awaiting approval';
+    return 'Complete';
+  };
+
   return (
     <div className="app-container">
-      {/* HEADER */}
       <header className="app-header">
         <div className="header-logo">
-          <span className="logo-icon">⇄</span>
-          <h1>SUPPLY CHAIN NEGO-BOT 2.0</h1>
+          <span className="logo-mark" aria-hidden="true">SC</span>
+          <div>
+            <h1>Supply Chain Negotiator</h1>
+            <p>SLA breach response and spot sourcing control room</p>
+          </div>
         </div>
         <div className="header-controls">
           <label className="switch-container">
@@ -229,10 +248,10 @@ export default function App() {
               checked={autoRefresh} 
               onChange={(e) => setAutoRefresh(e.target.checked)} 
             />
-            <span className="switch-label">Live Stream (3s)</span>
+            <span>Auto-refresh every 3s</span>
           </label>
           <span className={`status-badge ${loading ? 'loading' : 'idle'}`}>
-            {loading ? 'SYNCING...' : 'API CONNECTED'}
+            {loading ? 'Updating' : 'Connected'}
           </span>
         </div>
       </header>
@@ -243,7 +262,8 @@ export default function App() {
         {/* SIDEBAR - PIPELINE RUNS */}
         <aside className="sidebar">
           <div className="sidebar-section">
-            <h3>Disruption Emulator</h3>
+            <h3>Simulate disruption</h3>
+            <p className="section-hint">Trigger a webhook payload to start a new workflow run.</p>
             <form onSubmit={handleTrigger} className="trigger-form">
               <div className="form-group">
                 <label>SKU ID</label>
@@ -257,11 +277,7 @@ export default function App() {
                 </select>
               </div>
               <div className="form-group">
-                <label>Select AI Model
-                  <span style={{ marginLeft: '0.5rem', fontSize: '0.65rem', color: 'var(--accent-cyan)', opacity: 0.7 }}>
-                    (Free Tier)
-                  </span>
-                </label>
+                <label>AI model (free tier)</label>
                 <select
                   value={triggerForm.model_name}
                   onChange={(e) => setTriggerForm({...triggerForm, model_name: e.target.value})}
@@ -272,20 +288,12 @@ export default function App() {
                     </option>
                   ))}
                 </select>
-                {/* Active model badge */}
                 {(() => {
                   const active = GEMINI_FREE_TIER_MODELS.find(m => m.value === triggerForm.model_name);
                   return active ? (
-                    <div style={{
-                      display: 'flex', alignItems: 'center', gap: '0.4rem', marginTop: '0.3rem'
-                    }}>
-                      <span style={{
-                        fontSize: '0.65rem', fontWeight: 700, padding: '0.1rem 0.4rem',
-                        borderRadius: '4px', background: 'rgba(79,172,254,0.12)',
-                        color: 'var(--accent-blue)', border: '1px solid rgba(79,172,254,0.25)',
-                        letterSpacing: '0.05em'
-                      }}>{active.badge}</span>
-                      <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{active.desc}</span>
+                    <div className="model-badge-row">
+                      <span className="model-badge">{active.badge}</span>
+                      <span className="model-desc">{active.desc}</span>
                     </div>
                   ) : null;
                 })()}
@@ -310,15 +318,15 @@ export default function App() {
                 </div>
               </div>
               <button type="submit" className="btn-trigger" disabled={loading}>
-                {loading ? 'SCAFFOLDING...' : 'EMULATE WEBHOOK'}
+                {loading ? 'Starting run…' : 'Start workflow'}
               </button>
             </form>
           </div>
 
           <div className="sidebar-section list-section">
-            <h3>Active Pipeline Runs</h3>
+            <h3>Workflow runs</h3>
             {sessions.length === 0 ? (
-              <p className="no-data">No active runs. Emulate a webhook disruption above to begin.</p>
+              <p className="no-data">No runs yet. Simulate a disruption above to start your first session.</p>
             ) : (
               <div className="session-list">
                 {sessions.map((s) => (
@@ -326,13 +334,16 @@ export default function App() {
                     key={s.session_id} 
                     className={`session-card ${selectedSessionId === s.session_id ? 'active' : ''} ${s.is_suspended ? 'suspended' : ''}`}
                     onClick={() => setSelectedSessionId(s.session_id)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => e.key === 'Enter' && setSelectedSessionId(s.session_id)}
                   >
                     <div className="session-card-header">
-                      <span className="session-id">{s.session_id.substring(0, 8)}...</span>
-                      <span className="session-time">{s.state?.sku ? (s.state.sku.length > 10 ? s.state.sku.substring(0, 10) + '...' : s.state.sku) : 'SKU UNKNOWN'}</span>
+                      <span className="session-id">{s.session_id}</span>
+                      <span className="session-time">{s.state?.sku || 'Unknown SKU'}</span>
                     </div>
                     <div className="session-card-body">
-                      <span>Status: {s.state?.security_alert ? '⚠️ QUARANTINED' : s.is_suspended ? '⏳ Suspended' : '✓ Finished'}</span>
+                      <span>{formatSessionStatus(s)}</span>
                       {s.is_suspended && <span className="interrupt-tag">{s.active_interrupt}</span>}
                     </div>
                   </div>
@@ -345,71 +356,33 @@ export default function App() {
         {/* MAIN CONTROL CENTER PANEL */}
         <main className="main-content">
           
-          {/* PIPELINE PROGRESS BAR */}
-          <section className="pipeline-progress">
-            <div className="section-title">
-              <h2>Active Graph Execution Pathway</h2>
-              {selectedSessionId && <span className="session-ref">Session: {selectedSessionId}</span>}
-            </div>
-            
-            <div className="pipeline-graph">
-              <div className={`graph-node ${getNodeClass('ingestion')}`}>
-                <div className="node-icon">📥</div>
-                <span>Webhook Ingest</span>
-              </div>
-              <div className="graph-arrow">➜</div>
-
-              <div className={`graph-node ${getNodeClass('security_screen')}`}>
-                <div className="node-icon">🛡️</div>
-                <span>Security Shield</span>
-              </div>
-              <div className="graph-arrow">➜</div>
-              
-              <div className={`graph-node ${getNodeClass('legal_sla')}`}>
-                <div className="node-icon">⚖</div>
-                <span>SLA Damages Audit</span>
-              </div>
-              <div className="graph-arrow">➜</div>
-              
-              <div className={`graph-node ${getNodeClass('legal_approval')}`}>
-                <div className="node-icon">👤</div>
-                <span>Legal HITL Approval</span>
-              </div>
-              <div className="graph-arrow">➜</div>
-              
-              <div className={`graph-node ${getNodeClass('sourcing')}`}>
-                <div className="node-icon">🔍</div>
-                <span>Spot Catalog Sourcing</span>
-              </div>
-              <div className="graph-arrow">➜</div>
-              
-              <div className={`graph-node ${getNodeClass('procurement')}`}>
-                <div className="node-icon">💳</div>
-                <span>Premium Constraint Check</span>
-              </div>
-              <div className="graph-arrow">➜</div>
-              
-              <div className={`graph-node ${getNodeClass('negotiation')}`}>
-                <div className="node-icon">✉</div>
-                <span>Loop Negotiation</span>
-              </div>
-              <div className="graph-arrow">➜</div>
-              
-              <div className={`graph-node ${getNodeClass('po_signing')}`}>
-                <div className="node-icon">✍</div>
-                <span>PO Signoff</span>
-              </div>
-            </div>
-          </section>
-
-          {/* ACTIVE DETAILS & CONTROL PANELS */}
           {!currentSession ? (
             <div className="welcome-screen">
-              <div className="welcome-icon">⇅</div>
-              <h2>Supply-Chain SLA Breach & Spot Negotiator Dashboard</h2>
-              <p>Select an active pipeline run from the sidebar, or trigger a new webhook simulation to watch the multi-agent graph execute.</p>
+              <div className="welcome-icon" aria-hidden="true">↔</div>
+              <h2>Select a workflow run</h2>
+              <p>Choose a session from the sidebar or simulate a new supplier disruption to monitor legal review, sourcing, and negotiation in one place.</p>
             </div>
           ) : (
+            <>
+              <section className="pipeline-progress">
+                <div className="section-title">
+                  <h2>Workflow progress</h2>
+                  <span className="session-ref">{selectedSessionId}</span>
+                </div>
+                
+                <div className="pipeline-graph">
+                  {PIPELINE_STEPS.map((step, index) => (
+                    <React.Fragment key={step.id}>
+                      <div className={`graph-node ${getNodeClass(step.id)}`}>
+                        <div className="node-icon">{step.step}</div>
+                        <span>{step.label}</span>
+                      </div>
+                      {index < PIPELINE_STEPS.length - 1 && <div className="graph-connector" aria-hidden="true" />}
+                    </React.Fragment>
+                  ))}
+                </div>
+              </section>
+
             <div className="details-container">
               
               {/* ROW 1: SLA CONTRACT AUDITOR & SPOT SOURCING SCRAPER */}
@@ -417,7 +390,7 @@ export default function App() {
                 
                 {/* SLA CONTRACT AUDITOR */}
                 <div className="glass-panel contract-panel">
-                  <h3>SLA Contract Damage Auditor</h3>
+                  <h3>SLA contract audit</h3>
                   
                   {state.legal_analysis ? (
                     <div className="data-box">
@@ -429,7 +402,7 @@ export default function App() {
                           <strong>Penalty / Day:</strong> ${state.legal_analysis.liquidated_damages_per_day?.toLocaleString()}
                         </div>
                         <div>
-                          <strong>Force Majeure:</strong> {state.legal_analysis.force_majeure_applies ? '⚠️ YES (Excluded)' : '✓ NO (Liable)'}
+                          <strong>Force majeure:</strong> {state.legal_analysis.force_majeure_applies ? 'Applies (excluded)' : 'Does not apply (liable)'}
                         </div>
                         <div className="highlight">
                           <strong>Damages Owed:</strong> ${state.legal_analysis.total_penalty?.toLocaleString()}
@@ -437,17 +410,17 @@ export default function App() {
                       </div>
                       
                       <div className="doc-segment">
-                        <h4>Extracted Legal Clauses (Scrubbed / salted)</h4>
+                        <h4>Extracted clauses (scrubbed)</h4>
                         <p className="legal-text">
                           "...liquidated damages penalty of <span className="salt-tag">$5,000 per day</span> for delayed delivery of <span className="salt-tag">SKU-404X</span>... Force Majeure exclusions apply excluding labor strikes... Buyer target margin of <span className="salt-tag">[SALTED_TARGET_MARGIN]%</span>..."
                         </p>
-                        <small className="audit-note">Note: PII & target financial metrics salted with random tokens to secure prompt nodes.</small>
+                        <small className="audit-note">PII and sensitive metrics are salted before reaching the model.</small>
                       </div>
 
                       {/* Gated approval button */}
                       {activeInterrupt === 'legal_approval' && (
                         <div className="hitl-actions">
-                          <h4>Action Required: Legal Decision Override</h4>
+                          <h4>Legal approval required</h4>
                           <div className="action-row">
                             <input 
                               type="number" 
@@ -459,13 +432,13 @@ export default function App() {
                               className="btn-approve" 
                               onClick={() => handleResume('legal_approval', { approved: true, override_damages: parseFloat(overrideDamages) })}
                             >
-                              Approve SLA Claim
+                              Approve claim
                             </button>
                             <button 
                               className="btn-reject"
                               onClick={() => handleResume('legal_approval', { approved: false })}
                             >
-                              Waive Claim
+                              Waive claim
                             </button>
                           </div>
                         </div>
@@ -473,22 +446,22 @@ export default function App() {
                       
                       {state.legal_approved !== undefined && (
                         <div className="gate-resolution positive">
-                          <span>✓ Legal Gate Resolved: <strong>{state.legal_approved ? 'APPROVED' : 'WAIVED'}</strong> (Claim value: ${state.approved_damages?.toLocaleString()})</span>
+                          <span>Legal gate resolved: <strong>{state.legal_approved ? 'Approved' : 'Waived'}</strong> — claim value ${state.approved_damages?.toLocaleString()}</span>
                         </div>
                       )}
                     </div>
                   ) : (
                     <p className="no-data-msg">
                       {state.security_alert 
-                        ? "ALERT: Bypassed due to prompt injection security quarantine."
-                        : "Waiting for legal auditor agent to parse contract SLA..."}
+                        ? "Skipped — session quarantined after a security alert."
+                        : "Waiting for the legal auditor to finish contract analysis."}
                     </p>
                   )}
                 </div>
 
                 {/* SPOT SOURCING SCRAPER */}
                 <div className="glass-panel sourcing-panel">
-                  <h3>B2B Scraped Supplier Catalog</h3>
+                  <h3>Spot sourcing catalog</h3>
                   
                   {state.sourcing_analysis ? (
                     <div className="data-box">
@@ -535,20 +508,20 @@ export default function App() {
                       {/* Gated approval button */}
                       {activeInterrupt === 'budget_approval' && (
                         <div className="hitl-actions">
-                          <h4>Action Required: Finance Premium Override</h4>
-                          <p className="action-warning">Sourcing premium is {state.sourcing_analysis.price_premium_percent?.toFixed(1)}% which exceeds the 10% company constraint. Slack alert dispatched.</p>
+                          <h4>Budget approval required</h4>
+                          <p className="action-warning">Spot premium is {state.sourcing_analysis.price_premium_percent?.toFixed(1)}%, above the 10% ceiling. Finance has been notified.</p>
                           <div className="action-row">
                             <button 
                               className="btn-approve" 
                               onClick={() => handleResume('budget_approval', { approved: true })}
                             >
-                              Approve Budget Override
+                              Approve override
                             </button>
                             <button 
                               className="btn-reject"
                               onClick={() => handleResume('budget_approval', { approved: false })}
                             >
-                              Abort Sourcing Run
+                              Abort sourcing
                             </button>
                           </div>
                         </div>
@@ -556,15 +529,15 @@ export default function App() {
 
                       {state.procurement_approved !== undefined && (
                         <div className="gate-resolution positive">
-                          <span>✓ Procurement Gate Resolved: <strong>{state.procurement_approved ? 'BUDGET OVERRIDE APPROVED' : 'ABORTED'}</strong></span>
+                          <span>Procurement gate resolved: <strong>{state.procurement_approved ? 'Override approved' : 'Aborted'}</strong></span>
                         </div>
                       )}
                     </div>
                   ) : (
                     <p className="no-data-msg">
                       {state.security_alert
-                        ? "ALERT: Bypassed due to prompt injection security quarantine."
-                        : "Waiting for spot sourcing agent to compile catalogs..."}
+                        ? "Skipped — session quarantined after a security alert."
+                        : "Waiting for the sourcing agent to compile vendor options."}
                     </p>
                   )}
                 </div>
@@ -576,14 +549,14 @@ export default function App() {
                 
                 {/* NEGOTIATION THREAD LOGS */}
                 <div className="glass-panel negotiation-panel">
-                  <h3>Multi-Turn B2B Negotiation Terminal</h3>
+                  <h3>Vendor negotiation</h3>
                   
                   {state.negotiation_state ? (
                     <div className="data-box flex-column">
                       <div className="thread-meta">
-                        <span>Turns Completed: {state.negotiation_turns || 0} / {MAX_NEGOTIATION_TURNS}</span>
+                        <span>Turns: {state.negotiation_turns || 0} / {MAX_NEGOTIATION_TURNS}</span>
                         <span className={`thread-status ${state.negotiation_resolved ? 'resolved' : state.negotiation_escalated ? 'escalated' : 'active'}`}>
-                          {state.negotiation_resolved ? '✓ TERMS RESOLVED' : state.negotiation_escalated ? '⚠️ ESCALATED' : '⏳ ACTIVE'}
+                          {state.negotiation_resolved ? 'Resolved' : state.negotiation_escalated ? 'Escalated' : 'In progress'}
                         </span>
                       </div>
 
@@ -591,7 +564,7 @@ export default function App() {
                         {state.negotiation_state.email_drafted && (
                           <div className="email-bubble agent-email">
                             <div className="email-header">
-                              <strong>From:</strong> Procurement Agent Nego-Bot
+                              <strong>From:</strong> Procurement agent
                               <strong>To:</strong> {state.negotiation_state.vendor_email}
                             </div>
                             <div className="email-body-text">
@@ -613,11 +586,11 @@ export default function App() {
                       {/* Gated approval button */}
                       {activeInterrupt === 'vendor_reply' && (
                         <div className="hitl-actions">
-                          <h4>Emulate Incoming Vendor Email Response</h4>
+                          <h4>Simulate vendor reply</h4>
                           <div className="email-emulate-row">
                             <textarea 
                               rows="3"
-                              placeholder="Type incoming vendor email reply... (keywords like 'agree', 'accept' will auto-resolve the negotiation)" 
+                              placeholder="Paste a vendor reply. Words like agree or accept will resolve the negotiation."
                               value={simulatedVendorReply} 
                               onChange={(e) => setSimulatedVendorReply(e.target.value)}
                             />
@@ -628,7 +601,7 @@ export default function App() {
                                 setSimulatedVendorReply('');
                               }}
                             >
-                              Send Simulated Reply
+                              Send reply
                             </button>
                           </div>
                         </div>
@@ -636,33 +609,33 @@ export default function App() {
 
                       {state.negotiation_resolved && (
                         <div className="gate-resolution positive">
-                          <span>✓ Negotiation Settled: Agreed Unit Price is <strong>${state.negotiation_final_price?.toFixed(2)}</strong></span>
+                          <span>Negotiation settled at <strong>${state.negotiation_final_price?.toFixed(2)}</strong> per unit</span>
                         </div>
                       )}
 
                       {state.negotiation_escalated && (
                         <div className="gate-resolution negative">
-                          <span>⚠️ Negotiation Escalated to Human Buyer Ticket: <strong>{state.ticket_id}</strong> (Turns exceeded limit)</span>
+                          <span>Escalated to buyer queue — ticket <strong>{state.ticket_id}</strong></span>
                         </div>
                       )}
                     </div>
                   ) : (
                     <p className="no-data-msg">
                       {state.security_alert
-                        ? "ALERT: Bypassed due to prompt injection security quarantine."
-                        : "Waiting for negotiation agent to initiate proposal..."}
+                        ? "Skipped — session quarantined after a security alert."
+                        : "Waiting for the negotiation agent to draft the first proposal."}
                     </p>
                   )}
                 </div>
 
                 {/* PURCHASE ORDER SIGNING */}
                 <div className="glass-panel po-panel">
-                  <h3>PO Signing Validation Layer</h3>
+                  <h3>Purchase order</h3>
                   
                   {state.negotiation_resolved ? (
                     <div className="data-box">
                       <div className="po-details">
-                        <h4>Immutable PO Manifest Buffer</h4>
+                        <h4>PO manifest</h4>
                         <div className="po-manifest">
                           <div><strong>PO Identifier:</strong> PO-{state.sku}-AUTO</div>
                           <div><strong>Item SKU:</strong> {state.sku}</div>
@@ -675,19 +648,19 @@ export default function App() {
                       {/* Gated approval button */}
                       {activeInterrupt === 'po_signature' && (
                         <div className="hitl-actions">
-                          <h4>Action Required: Operations Director PO Signature</h4>
+                          <h4>Signature required</h4>
                           <div className="action-row">
                             <button 
                               className="btn-approve signature-btn" 
                               onClick={() => handleResume('po_signature', { signed: true })}
                             >
-                              Apply Digital Signature (Sign PO)
+                              Sign purchase order
                             </button>
                             <button 
                               className="btn-reject"
                               onClick={() => handleResume('po_signature', { signed: false })}
                             >
-                              Reject PO
+                              Reject
                             </button>
                           </div>
                         </div>
@@ -695,15 +668,15 @@ export default function App() {
 
                       {state.po_signed && (
                         <div className="gate-resolution positive">
-                          <span>✓ PO Signed and Committed to ERP Database: <strong>{state.po_database_result}</strong></span>
+                          <span>PO signed and committed to ERP — <strong>{state.po_database_result}</strong></span>
                         </div>
                       )}
                     </div>
                   ) : (
                     <p className="no-data-msg">
                       {state.security_alert
-                        ? "ALERT: Bypassed due to prompt injection security quarantine."
-                        : "Waiting for negotiation closure to generate Purchase Order manifest..."}
+                        ? "Skipped — session quarantined after a security alert."
+                        : "Available after negotiation is resolved."}
                     </p>
                   )}
                 </div>
@@ -713,15 +686,10 @@ export default function App() {
               {/* PIPELINE AUDIT TRAIL / REAL-TIME EVENT LOGS FEED */}
               {currentSession && currentSession.events && (
                 <section className="audit-log-section">
-                  <h3>Pipeline Execution Audit Log</h3>
+                  <h3>Event log</h3>
                   <div className="terminal-window">
                     <div className="terminal-header">
-                      <div className="terminal-buttons">
-                        <span className="term-btn close"></span>
-                        <span className="term-btn minimize"></span>
-                        <span className="term-btn expand"></span>
-                      </div>
-                      <span className="terminal-title">operator@nego-bot-orchestrator: ~events</span>
+                      <span className="terminal-title">workflow events</span>
                     </div>
                     <div className="terminal-body">
                       {currentSession.events.length === 0 ? (
@@ -822,58 +790,54 @@ export default function App() {
 
               {/* FINOPS STATS & LATENCY DASHBOARD */}
               <section className="finops-dashboard">
-                <h3>Financial Operations & AI Token Telemetry Dashboard</h3>
+                <h3>Run economics</h3>
                 <div className="finops-grid">
                   <div className="metric-card">
-                    <span className="metric-label">Active AI Model</span>
-                    <span className="metric-value" style={{ fontSize: '0.9rem', textTransform: 'none', wordBreak: 'break-all', letterSpacing: 0 }}>
+                    <span className="metric-label">Model</span>
+                    <span className="metric-value compact">
                       {state.selected_model || triggerForm.model_name || 'gemini-2.5-flash'}
                     </span>
                     {(() => {
                       const modelId = state.selected_model || triggerForm.model_name || 'gemini-2.5-flash';
                       const m = GEMINI_FREE_TIER_MODELS.find(x => x.value === modelId);
                       return m ? (
-                        <span className="metric-sub" style={{ display: 'flex', gap: '0.3rem', alignItems: 'center', flexWrap: 'wrap' }}>
-                          <span style={{
-                            fontSize: '0.62rem', fontWeight: 700, padding: '0.1rem 0.35rem',
-                            borderRadius: '4px', background: 'rgba(0,242,254,0.08)',
-                            color: 'var(--accent-cyan)', border: '1px solid rgba(0,242,254,0.2)'
-                          }}>{m.badge}</span>
-                          <span style={{ color: 'var(--text-muted)', fontSize: '0.68rem' }}>{m.desc}</span>
+                        <span className="metric-sub">
+                          <span className="model-badge">{m.badge}</span> {m.desc}
                         </span>
-                      ) : <span className="metric-sub text-gray">Free Tier Model</span>;
+                      ) : <span className="metric-sub text-gray">Free tier</span>;
                     })()}
                   </div>
 
                   <div className="metric-card">
-                    <span className="metric-label">Estimated Token Consumption</span>
-                    <span className="metric-value">{(inputTokens + outputTokens).toLocaleString()} tokens</span>
-                    <span className="metric-sub text-gray">In: {inputTokens.toLocaleString()} | Out: {outputTokens.toLocaleString()}</span>
+                    <span className="metric-label">Tokens (est.)</span>
+                    <span className="metric-value">{(inputTokens + outputTokens).toLocaleString()}</span>
+                    <span className="metric-sub text-gray">{inputTokens.toLocaleString()} in · {outputTokens.toLocaleString()} out</span>
                   </div>
                   
                   <div className="metric-card">
-                    <span className="metric-label">Model Invocation Cost (USD)</span>
+                    <span className="metric-label">API cost (est.)</span>
                     <span className="metric-value">${tokenCost}</span>
-                    <span className="metric-sub text-green">Telemetry: otel_to_cloud=False</span>
+                    <span className="metric-sub text-gray">Gemini free-tier pricing</span>
                   </div>
                   
                   <div className="metric-card">
-                    <span className="metric-label">Contract Liability Recovered</span>
+                    <span className="metric-label">Liability recovered</span>
                     <span className="metric-value">${savings.toLocaleString()}</span>
-                    <span className="metric-sub text-green">{state.legal_approved ? 'Audited & Claimed' : 'None'}</span>
+                    <span className="metric-sub text-green">{state.legal_approved ? 'Claim approved' : 'Pending'}</span>
                   </div>
                   
                   <div className="metric-card">
-                    <span className="metric-label">Net Value Recovered</span>
+                    <span className="metric-label">Net value</span>
                     <span className={`metric-value ${parseFloat(netSaved) >= 0 ? 'text-green' : 'text-red'}`}>
                       ${parseFloat(netSaved).toLocaleString()}
                     </span>
-                    <span className="metric-sub text-gray">Spot premium overhead: ${Math.max(0, premiumCost).toLocaleString()}</span>
+                    <span className="metric-sub text-gray">Premium overhead ${Math.max(0, premiumCost).toLocaleString()}</span>
                   </div>
                 </div>
               </section>
 
             </div>
+            </>
           )}
 
         </main>

@@ -1,0 +1,270 @@
+---
+pid: 8980
+cwd: "F:\Projects\5dayvibecodingintensive\capstone-project\supply-chain-negotiator"
+command: "F:\\Projects\\5dayvibecodingintensive\\capstone-project\\supply-chain-negotiator\\.venv\\Scripts\\python.exe F:\\Projects\\5dayvibecodingintensive\\capstone-project\\supply-chain-negotiator\\_debug_contents.py"
+started_at: 2026-07-03T22:38:27.231Z
+running_for_ms: 790000   
+---
+F:\Projects\5dayvibecodingintensive\capstone-project\supply-chain-negotiator\.venv\Lib\site-packages\google\adk\features\_feature_decorator.py:72: UserWarning: [EXPERIMENTAL] feature FeatureName.PLUGGABLE_AUTH is enabled.
+  check_feature_enabled()
+WARNING:google_adk.google.adk.tools.mcp_tool.mcp_session_manager:StdioServerParameters is not recommended. Please use StdioConnectionParams.
+WARNING:google_adk.google.adk.tools.mcp_tool.mcp_session_manager:StdioServerParameters is not recommended. Please use StdioConnectionParams.
+F:\Projects\5dayvibecodingintensive\capstone-project\supply-chain-negotiator\.venv\Lib\site-packages\google\adk\tools\set_model_response_tool.py:116: UserWarning: [EXPERIMENTAL] feature FeatureName.JSON_SCHEMA_FOR_FUNC_DECL is enabled.
+  build_function_declaration(
+F:\Projects\5dayvibecodingintensive\capstone-project\supply-chain-negotiator\.venv\Lib\site-packages\google\adk\tools\mcp_tool\mcp_toolset.py:304: UserWarning: [EXPERIMENTAL] feature FeatureName._MCP_GRACEFUL_ERROR_HANDLING is enabled.
+  session = await self._mcp_session_manager.create_session(
+[07/04/26 04:08:30] INFO     Processing request of type           server.py:733
+                             ListToolsRequest                                  
+F:\Projects\5dayvibecodingintensive\capstone-project\supply-chain-negotiator\.venv\Lib\site-packages\google\adk\features\_feature_decorator.py:72: UserWarning: [EXPERIMENTAL] feature FeatureName.BASE_AUTHENTICATED_TOOL is enabled.
+  check_feature_enabled()
+[07/04/26 04:08:32] INFO     Processing request of type           server.py:733
+                             CallToolRequest                                   
+[07/04/26 04:08:40] INFO     Processing request of type           server.py:733
+                             ListToolsRequest                                  
+[07/04/26 04:08:42] INFO     Processing request of type           server.py:733
+                             CallToolRequest                                   
+ERROR:google_adk.google.adk.workflow._node_runner:Node execution failed with exception
+Traceback (most recent call last):
+  File "F:\Projects\5dayvibecodingintensive\capstone-project\supply-chain-negotiator\.venv\Lib\site-packages\google\adk\workflow\_node_runner.py", line 135, in run
+    await self._execute_node(ctx, node_input)
+  File "F:\Projects\5dayvibecodingintensive\capstone-project\supply-chain-negotiator\.venv\Lib\site-packages\google\adk\workflow\_node_runner.py", line 255, in _execute_node
+    await self._run_node_loop(ctx, node_input)
+  File "F:\Projects\5dayvibecodingintensive\capstone-project\supply-chain-negotiator\.venv\Lib\site-packages\google\adk\workflow\_node_runner.py", line 269, in _run_node_loop
+    async for event in agen:
+      self._track_event_in_context(event, ctx)
+      await self._enqueue_event(event, ctx)
+  File "F:\Projects\5dayvibecodingintensive\capstone-project\supply-chain-negotiator\.venv\Lib\site-packages\google\adk\workflow\_base_node.py", line 217, in run
+    async for item in agen:
+    ...<12 lines>...
+        yield Event(output=validated)
+  File "F:\Projects\5dayvibecodingintensive\capstone-project\supply-chain-negotiator\.venv\Lib\site-packages\google\adk\agents\llm_agent.py", line 559, in _run_impl
+    async for event in agen:
+    ...<4 lines>...
+      yield event
+  File "F:\Projects\5dayvibecodingintensive\capstone-project\supply-chain-negotiator\.venv\Lib\site-packages\google\adk\workflow\_llm_agent_wrapper.py", line 339, in run_llm_agent_as_node
+    async for event in run_iter:
+      process_llm_agent_output(agent, ctx, event)
+      yield event
+  File "F:\Projects\5dayvibecodingintensive\capstone-project\supply-chain-negotiator\.venv\Lib\site-packages\google\adk\agents\base_agent.py", line 305, in run_async
+    async for event in agen:
+      yield event
+  File "F:\Projects\5dayvibecodingintensive\capstone-project\supply-chain-negotiator\.venv\Lib\site-packages\google\adk\agents\llm_agent.py", line 515, in _run_async_impl
+    async for event in agen:
+    ...<5 lines>...
+        should_pause = True
+  File "F:\Projects\5dayvibecodingintensive\capstone-project\supply-chain-negotiator\.venv\Lib\site-packages\google\adk\flows\llm_flows\base_llm_flow.py", line 889, in run_async
+    async for event in agen:
+      last_event = event
+      yield event
+  File "F:\Projects\5dayvibecodingintensive\capstone-project\supply-chain-negotiator\.venv\Lib\site-packages\google\adk\flows\llm_flows\base_llm_flow.py", line 968, in _run_one_step_async
+    async for llm_response in agen:
+    ...<13 lines>...
+          yield event
+  File "F:\Projects\5dayvibecodingintensive\capstone-project\supply-chain-negotiator\.venv\Lib\site-packages\google\adk\flows\llm_flows\base_llm_flow.py", line 1362, in _call_llm_async
+    async for event in agen:
+      yield event
+  File "F:\Projects\5dayvibecodingintensive\capstone-project\supply-chain-negotiator\.venv\Lib\site-packages\google\adk\flows\llm_flows\base_llm_flow.py", line 1340, in _call_llm_with_tracing
+    async for llm_response in agen:
+    ...<18 lines>...
+      yield llm_response
+  File "F:\Projects\5dayvibecodingintensive\capstone-project\supply-chain-negotiator\.venv\Lib\site-packages\google\adk\flows\llm_flows\base_llm_flow.py", line 1423, in _run_and_handle_error
+    async for response in agen:
+      yield response
+  File "F:\Projects\5dayvibecodingintensive\capstone-project\supply-chain-negotiator\.venv\Lib\site-packages\google\adk\flows\llm_flows\base_llm_flow.py", line 408, in _run_and_handle_error
+    raise model_error
+  File "F:\Projects\5dayvibecodingintensive\capstone-project\supply-chain-negotiator\.venv\Lib\site-packages\google\adk\flows\llm_flows\base_llm_flow.py", line 385, in _run_and_handle_error
+    async for llm_response in agen:
+      tel_ctx.record_llm_response(invocation_context, llm_response)
+      yield llm_response
+  File "F:\Projects\5dayvibecodingintensive\capstone-project\supply-chain-negotiator\.venv\Lib\site-packages\google\adk\models\google_llm.py", line 296, in generate_content_async
+    raise ce
+  File "F:\Projects\5dayvibecodingintensive\capstone-project\supply-chain-negotiator\.venv\Lib\site-packages\google\adk\models\google_llm.py", line 274, in generate_content_async
+    response = await self.api_client.aio.models.generate_content(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "F:\Projects\5dayvibecodingintensive\capstone-project\supply-chain-negotiator\.venv\Lib\site-packages\google\genai\models.py", line 8679, in generate_content
+    return await self._generate_content(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        model=model, contents=contents, config=final_parsed_config
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "F:\Projects\5dayvibecodingintensive\capstone-project\supply-chain-negotiator\.venv\Lib\site-packages\google\genai\models.py", line 7153, in _generate_content
+    response = await self._api_client.async_request(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        'post', path, request_dict, http_options
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "F:\Projects\5dayvibecodingintensive\capstone-project\supply-chain-negotiator\.venv\Lib\site-packages\google\genai\_api_client.py", line 1664, in async_request
+    result = await self._async_request(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^
+        http_request=http_request, http_options=http_options, stream=False
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "F:\Projects\5dayvibecodingintensive\capstone-project\supply-chain-negotiator\.venv\Lib\site-packages\google\genai\_api_client.py", line 1597, in _async_request
+    return await self._async_retry(  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self._async_request_once, http_request, stream
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "F:\Projects\5dayvibecodingintensive\capstone-project\supply-chain-negotiator\.venv\Lib\site-packages\tenacity\asyncio\__init__.py", line 112, in __call__
+    do = await self.iter(retry_state=retry_state)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "F:\Projects\5dayvibecodingintensive\capstone-project\supply-chain-negotiator\.venv\Lib\site-packages\tenacity\asyncio\__init__.py", line 157, in iter
+    result = await action(retry_state)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "F:\Projects\5dayvibecodingintensive\capstone-project\supply-chain-negotiator\.venv\Lib\site-packages\tenacity\_utils.py", line 111, in inner
+    return call(*args, **kwargs)
+  File "F:\Projects\5dayvibecodingintensive\capstone-project\supply-chain-negotiator\.venv\Lib\site-packages\tenacity\__init__.py", line 413, in exc_check
+    raise retry_exc.reraise()
+          ~~~~~~~~~~~~~~~~~^^
+  File "F:\Projects\5dayvibecodingintensive\capstone-project\supply-chain-negotiator\.venv\Lib\site-packages\tenacity\__init__.py", line 184, in reraise
+    raise self.last_attempt.result()
+          ~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\jatin\AppData\Roaming\uv\python\cpython-3.14-windows-x86_64-none\Lib\concurrent\futures\_base.py", line 443, in result
+    return self.__get_result()
+           ~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\jatin\AppData\Roaming\uv\python\cpython-3.14-windows-x86_64-none\Lib\concurrent\futures\_base.py", line 395, in __get_result
+    raise self._exception
+  File "F:\Projects\5dayvibecodingintensive\capstone-project\supply-chain-negotiator\.venv\Lib\site-packages\tenacity\asyncio\__init__.py", line 116, in __call__
+    result = await fn(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "F:\Projects\5dayvibecodingintensive\capstone-project\supply-chain-negotiator\.venv\Lib\site-packages\google\genai\_api_client.py", line 1577, in _async_request_once
+    await errors.APIError.raise_for_async_response(client_response)
+  File "F:\Projects\5dayvibecodingintensive\capstone-project\supply-chain-negotiator\.venv\Lib\site-packages\google\genai\errors.py", line 247, in raise_for_async_response
+    await cls.raise_error_async(status_code, response_json, response)
+  File "F:\Projects\5dayvibecodingintensive\capstone-project\supply-chain-negotiator\.venv\Lib\site-packages\google\genai\errors.py", line 269, in raise_error_async
+    raise ClientError(status_code, response_json, response)
+google.genai.errors.ClientError: 400 INVALID_ARGUMENT. {'error': {'code': 400, 'message': 'Please ensure that function call turn comes immediately after a user turn or after a function response turn.', 'status': 'INVALID_ARGUMENT'}}
+ERROR:google_adk.google.adk.runners:Root node supply_chain_negotiator_workflow failed.
+Traceback (most recent call last):
+  File "F:\Projects\5dayvibecodingintensive\capstone-project\supply-chain-negotiator\.venv\Lib\site-packages\google\adk\runners.py", line 815, in _cleanup_root_task
+    await task
+  File "F:\Projects\5dayvibecodingintensive\capstone-project\supply-chain-negotiator\.venv\Lib\site-packages\google\adk\runners.py", line 560, in _drive_root_node
+    raise ctx.error
+  File "F:\Projects\5dayvibecodingintensive\capstone-project\supply-chain-negotiator\.venv\Lib\site-packages\google\adk\workflow\_node_runner.py", line 135, in run
+    await self._execute_node(ctx, node_input)
+  File "F:\Projects\5dayvibecodingintensive\capstone-project\supply-chain-negotiator\.venv\Lib\site-packages\google\adk\workflow\_node_runner.py", line 255, in _execute_node
+    await self._run_node_loop(ctx, node_input)
+  File "F:\Projects\5dayvibecodingintensive\capstone-project\supply-chain-negotiator\.venv\Lib\site-packages\google\adk\workflow\_node_runner.py", line 269, in _run_node_loop
+    async for event in agen:
+      self._track_event_in_context(event, ctx)
+      await self._enqueue_event(event, ctx)
+  File "F:\Projects\5dayvibecodingintensive\capstone-project\supply-chain-negotiator\.venv\Lib\site-packages\google\adk\workflow\_base_node.py", line 217, in run
+    async for item in agen:
+    ...<12 lines>...
+        yield Event(output=validated)
+  File "F:\Projects\5dayvibecodingintensive\capstone-project\supply-chain-negotiator\.venv\Lib\site-packages\google\adk\agents\llm_agent.py", line 559, in _run_impl
+    async for event in agen:
+    ...<4 lines>...
+      yield event
+  File "F:\Projects\5dayvibecodingintensive\capstone-project\supply-chain-negotiator\.venv\Lib\site-packages\google\adk\workflow\_llm_agent_wrapper.py", line 339, in run_llm_agent_as_node
+    async for event in run_iter:
+      process_llm_agent_output(agent, ctx, event)
+      yield event
+  File "F:\Projects\5dayvibecodingintensive\capstone-project\supply-chain-negotiator\.venv\Lib\site-packages\google\adk\agents\base_agent.py", line 305, in run_async
+    async for event in agen:
+      yield event
+  File "F:\Projects\5dayvibecodingintensive\capstone-project\supply-chain-negotiator\.venv\Lib\site-packages\google\adk\agents\llm_agent.py", line 515, in _run_async_impl
+    async for event in agen:
+    ...<5 lines>...
+        should_pause = True
+  File "F:\Projects\5dayvibecodingintensive\capstone-project\supply-chain-negotiator\.venv\Lib\site-packages\google\adk\flows\llm_flows\base_llm_flow.py", line 889, in run_async
+    async for event in agen:
+      last_event = event
+      yield event
+  File "F:\Projects\5dayvibecodingintensive\capstone-project\supply-chain-negotiator\.venv\Lib\site-packages\google\adk\flows\llm_flows\base_llm_flow.py", line 968, in _run_one_step_async
+    async for llm_response in agen:
+    ...<13 lines>...
+          yield event
+  File "F:\Projects\5dayvibecodingintensive\capstone-project\supply-chain-negotiator\.venv\Lib\site-packages\google\adk\flows\llm_flows\base_llm_flow.py", line 1362, in _call_llm_async
+    async for event in agen:
+      yield event
+  File "F:\Projects\5dayvibecodingintensive\capstone-project\supply-chain-negotiator\.venv\Lib\site-packages\google\adk\flows\llm_flows\base_llm_flow.py", line 1340, in _call_llm_with_tracing
+    async for llm_response in agen:
+    ...<18 lines>...
+      yield llm_response
+  File "F:\Projects\5dayvibecodingintensive\capstone-project\supply-chain-negotiator\.venv\Lib\site-packages\google\adk\flows\llm_flows\base_llm_flow.py", line 1423, in _run_and_handle_error
+    async for response in agen:
+      yield response
+  File "F:\Projects\5dayvibecodingintensive\capstone-project\supply-chain-negotiator\.venv\Lib\site-packages\google\adk\flows\llm_flows\base_llm_flow.py", line 408, in _run_and_handle_error
+    raise model_error
+  File "F:\Projects\5dayvibecodingintensive\capstone-project\supply-chain-negotiator\.venv\Lib\site-packages\google\adk\flows\llm_flows\base_llm_flow.py", line 385, in _run_and_handle_error
+    async for llm_response in agen:
+      tel_ctx.record_llm_response(invocation_context, llm_response)
+      yield llm_response
+  File "F:\Projects\5dayvibecodingintensive\capstone-project\supply-chain-negotiator\.venv\Lib\site-packages\google\adk\models\google_llm.py", line 296, in generate_content_async
+    raise ce
+  File "F:\Projects\5dayvibecodingintensive\capstone-project\supply-chain-negotiator\.venv\Lib\site-packages\google\adk\models\google_llm.py", line 274, in generate_content_async
+    response = await self.api_client.aio.models.generate_content(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "F:\Projects\5dayvibecodingintensive\capstone-project\supply-chain-negotiator\.venv\Lib\site-packages\google\genai\models.py", line 8679, in generate_content
+    return await self._generate_content(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        model=model, contents=contents, config=final_parsed_config
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "F:\Projects\5dayvibecodingintensive\capstone-project\supply-chain-negotiator\.venv\Lib\site-packages\google\genai\models.py", line 7153, in _generate_content
+    response = await self._api_client.async_request(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        'post', path, request_dict, http_options
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "F:\Projects\5dayvibecodingintensive\capstone-project\supply-chain-negotiator\.venv\Lib\site-packages\google\genai\_api_client.py", line 1664, in async_request
+    result = await self._async_request(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^
+        http_request=http_request, http_options=http_options, stream=False
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "F:\Projects\5dayvibecodingintensive\capstone-project\supply-chain-negotiator\.venv\Lib\site-packages\google\genai\_api_client.py", line 1597, in _async_request
+    return await self._async_retry(  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self._async_request_once, http_request, stream
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "F:\Projects\5dayvibecodingintensive\capstone-project\supply-chain-negotiator\.venv\Lib\site-packages\tenacity\asyncio\__init__.py", line 112, in __call__
+    do = await self.iter(retry_state=retry_state)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "F:\Projects\5dayvibecodingintensive\capstone-project\supply-chain-negotiator\.venv\Lib\site-packages\tenacity\asyncio\__init__.py", line 157, in iter
+    result = await action(retry_state)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "F:\Projects\5dayvibecodingintensive\capstone-project\supply-chain-negotiator\.venv\Lib\site-packages\tenacity\_utils.py", line 111, in inner
+    return call(*args, **kwargs)
+  File "F:\Projects\5dayvibecodingintensive\capstone-project\supply-chain-negotiator\.venv\Lib\site-packages\tenacity\__init__.py", line 413, in exc_check
+    raise retry_exc.reraise()
+          ~~~~~~~~~~~~~~~~~^^
+  File "F:\Projects\5dayvibecodingintensive\capstone-project\supply-chain-negotiator\.venv\Lib\site-packages\tenacity\__init__.py", line 184, in reraise
+    raise self.last_attempt.result()
+   
+[DEBUG SECURITY] raw factory_code: 'FAC-12', raw sku: 'SKU-777Z'
+[DEBUG SECURITY] clean factory_code: 'FAC-12', clean sku: 'SKU-777Z'
+
+ERROR: 400 INVALID_ARGUMENT. {'error': {'code': 400, 'message': 'Please ensure that function call turn comes immediately after a user turn or after a function response turn.', 'status': 'INVALID_ARGUMENT'}}
+       ~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\jatin\AppData\Roaming\uv\python\cpython-3.14-windows-x86_64-none\Lib\concurrent\futures\_base.py", line 443, in result
+    return self.__get_result()
+           ~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\jatin\AppData\Roaming\uv\python\cpython-3.14-windows-x86_64-none\Lib\concurrent\futures\_base.py", line 395, in __get_result
+    raise self._exception
+  File "F:\Projects\5dayvibecodingintensive\capstone-project\supply-chain-negotiator\.venv\Lib\site-packages\tenacity\asyncio\__init__.py", line 116, in __call__
+    result = await fn(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "F:\Projects\5dayvibecodingintensive\capstone-project\supply-chain-negotiator\.venv\Lib\site-packages\google\genai\_api_client.py", line 1577, in _async_request_once
+    await errors.APIError.raise_for_async_response(client_response)
+  File "F:\Projects\5dayvibecodingintensive\capstone-project\supply-chain-negotiator\.venv\Lib\site-packages\google\genai\errors.py", line 247, in raise_for_async_response
+    await cls.raise_error_async(status_code, response_json, response)
+  File "F:\Projects\5dayvibecodingintensive\capstone-project\supply-chain-negotiator\.venv\Lib\site-packages\google\genai\errors.py", line 269, in raise_error_async
+    raise ClientError(status_code, response_json, response)
+google.genai.errors.ClientError: 400 INVALID_ARGUMENT. {'error': {'code': 400, 'message': 'Please ensure that function call turn comes immediately after a user turn or after a function response turn.', 'status': 'INVALID_ARGUMENT'}}
